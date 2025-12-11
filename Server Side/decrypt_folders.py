@@ -1,3 +1,4 @@
+#decrypt_folders.py
 import os
 import sys
 from cryptography.fernet import Fernet
@@ -29,27 +30,28 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.label)
 
         self.setCentralWidget(container)
-
+    def get_base_dir(self):
+        # אם זה רץ כ-EXE (PyInstaller)
+        if getattr(sys, 'frozen', False):
+            return os.path.dirname(sys.executable)
+        # אם זה רץ כסקריפט PY רגיל
+        return os.path.dirname(os.path.abspath(__file__))
     def save_text(self):
         self.text_value = self.input.text().strip()
-        path = os.path.join(os.getcwd(), "test_folder")
+        path = self.get_base_dir()  # כאן זה רק התיקייה
         self.label.setText(f"Status: Decrypting with key {self.text_value} on {path}")
         decryption_key = self.text_value.encode()
         print(f"Starting decryption in path: {path}")
         f = Fernet(decryption_key)
         decrypt_files_in_directory(path, f)
 
-
 def read_file_data(file_path):
     with open(file_path, 'rb') as file:
         data = file.read()
     return data
-
 def decrypt_data(ciphertext, f):
     plaintext = f.decrypt(ciphertext)
     return plaintext
-
-
 def decrypt_file(file_path, f):
     encrypted_data = read_file_data(file_path)
     try:
@@ -61,7 +63,6 @@ def decrypt_file(file_path, f):
         file.write(decrypted_data)
     print(f"[+] Decrypted file: {file_path}")
     return decrypted_data
-
 def decrypt_files_in_directory(directory_path, f):
     all_filenames = os.listdir(directory_path)
 
@@ -79,4 +80,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
+    window.raise_()
+    window.activateWindow()
     sys.exit(app.exec())

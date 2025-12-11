@@ -1,5 +1,6 @@
 ('C:\\Users\\LiorCohen\\OneDrive - fun flex ltd\\משפחה\\יהלי '
- 'כהן\\Projects\\SigmaProject\\Server Side\\build\\decrypt_folders\\PYZ-00.pyz',
+ 'כהן\\Projects\\RansomwareTrojan\\Server '
+ 'Side\\build\\decrypt_folders\\PYZ-00.pyz',
  [('PySide6',
    'C:\\Users\\LiorCohen\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\PySide6\\__init__.py',
    'PYMODULE'),

